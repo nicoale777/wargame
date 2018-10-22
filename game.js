@@ -47,7 +47,7 @@ function findclick(position) {
 
 				container =  document.getElementById('GameContainer');//document.createElement( 'div' );
 				
-				
+				controls=  document.getElementById('GameComands');
 				
 				//document.body.appendChild( container );
 
@@ -96,6 +96,7 @@ function findclick(position) {
     container.addEventListener( 'mousedown', onMouseDown, false );
     container.addEventListener( 'mousemove', onMouseMove, false );
 	container.addEventListener( 'mouseup', onMouseUp, false );
+	//container.addEventListener( 'mouseleave', onMouseLeave, false ); not that good
 	document.onkeydown = handleKeyDown;
 				// stats
 				stats = new Stats();
@@ -107,13 +108,18 @@ function findclick(position) {
 }
 var canvas = document.getElementById('centralCanvas');		
 		var centralCtx = canvas.getContext('2d');
-function drawImagesToCanvas(src) {
+
+function clarCanvas(){
+	context.clearRect(0,0,canvas.width,canvas.height);
+}		
+		
+function drawImagesToCanvas(src,indexX,indexY) {
 	console.log(src);
   var img = new Image();
   
   img.onload = function () {
-	  context.clearRect(0,0,canvas.width,canvas.height);
-    context.drawImage(img, 5, 5,20,30);
+	  
+    context.drawImage(img, 20*indexX, 30*indexY,20,30);
 }
 img.src = src;
   
@@ -134,12 +140,31 @@ function addLight(){
 	sun.shadow.camera.near = 0.5;
 	sun.shadow.camera.far = 50 ;
 }
-
+/*not that good idea
+function onMouseLeave(event){
+	console.log("leave");
+}
+*/
 function onMouseMove( event ) {
 
 	// calculate mouse position in normalized device coordinates
 	// (-1 to +1) for both components
-
+	
+	//move camera when  pointer reach the borders
+	if(event.clientX<10){
+		camera.position.x = camera.position.x-1;
+	}
+	if(event.clientY<10){
+		camera.position.z = camera.position.z-1;
+	}
+	if(event.clientX>container.clientWidth-10){
+		camera.position.x = camera.position.x+1;
+	}
+	if(event.clientY>container.clientHeight-controls.clientHeight-10){
+		camera.position.z = camera.position.z+1;
+	}
+	
+	//
 	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
     
@@ -163,11 +188,11 @@ function onMouseMove( event ) {
 					if(selected[0]!= null && selected[0].type==2 && tablero[Math.trunc(helper.position.x)][Math.trunc(helper.position.z)].character.type==2){
 						helper.position.y = -1;
 						helper=sword;
-						helper.position.y = 1;
+						helper.position.y = tablero[Math.trunc(helper.position.x)][Math.trunc(helper.position.z)].character.heigth+1;
 					}else{
 						helper.position.y = -1;
 						helper=hand;
-						helper.position.y = 1;
+						helper.position.y = tablero[Math.trunc(helper.position.x)][Math.trunc(helper.position.z)].character.heigth+1;
 						
 					}
 					
@@ -242,11 +267,14 @@ function onMouseDown( event ) {
 				select.position.z=field.z+0.5;
 				select.position.y=0.05;
 				*/
-				selected[0].lifebar.position.y=2;
-				drawImagesToCanvas(selected.photo);
+				selected[0].lifebar.position.y=selected[0].heigth+1;
+				selected[0].lifebar.position.x=selected[0].x+0.5;
+				selected[0].lifebar.position.z=selected[0].z+0.5;
+				clarCanvas();
+				drawImagesToCanvas(selected[0].photo,0,0);
 				
             }               
-            else if(selected[0]!=null){
+            else if(selected[0]!=null && selected[0].clan==0 && selected[0].type!=1 ){
 				
 				selected.forEach(function(element) {
 					  
@@ -285,13 +313,20 @@ function onMouseUp(event){
 		
 		if(flagDrag==1){
 			selected=[];
+			clarCanvas();
+			var i0=0,j0=0;
 			for(var i=(Math.trunc(selectMult.position.x)-Math.trunc(selectMult.scale.x/2));i<(Math.trunc(selectMult.position.x)-Math.trunc(selectMult.scale.x/2))+selectMult.scale.x;i++){
 				for(var j=(Math.trunc(selectMult.position.z)-Math.trunc(selectMult.scale.y/2));j<(Math.trunc(selectMult.position.z)-Math.trunc(selectMult.scale.y/2))+selectMult.scale.y;j++){
-					
-					if(tablero[i][j].character!=null && tablero[i][j].character.type==2){						
+					if(i0>10){
+						j0++;
+						i0=0;
+					}
+					if(tablero[i][j].character!=null && tablero[i][j].character.clan==0 && tablero[i][j].character.type==2){						
 						console.log("selected "+tablero[i][j].character.id);
-						tablero[i][j].character.lifebar.position.y=2;
+						tablero[i][j].character.lifebar.position.y=tablero[i][j].character.heigth+1;
 						selected.push(tablero[i][j].character);
+						drawImagesToCanvas(tablero[i][j].character.photo,i0++,j0);
+						
 					}	
 				}
 			}
@@ -446,7 +481,7 @@ function handleKeyDown(keyEvent){
 			
 
 	var i=1;
-function loadchar(x,y,z,src,dimentionx,dimentionz,clan,type,photo){
+function loadchar(x,y,z,src,dimentionx,dimentionz,clan,type,photo,heigth){
 
 var loader = new THREE.GLTFLoader();
 				
@@ -471,7 +506,7 @@ var loader = new THREE.GLTFLoader();
 					scene.add( cube );
 					
 					
-					var characterTmp=new Character(charcounter++,clan,type,x,z,gltf.scene,40,5,1,100,1,photo,cube);
+					var characterTmp=new Character(charcounter++,clan,type,x,z,gltf.scene,40,5,1,100,1,photo,cube,heigth);
 					for(var i=0;i<dimentionx;i++){
 						for(var j=0;j<dimentionz;j++){
 							tablero[x+i][z+j].character=characterTmp;
@@ -513,7 +548,15 @@ function addWorld(){
 	scene.add( world );
 	
 	var tree;
-    var i=0;
+    var i=0
+	var geometry = new THREE.BoxGeometry( 0.6, 0.1, 0.1 );
+					var material = new THREE.MeshBasicMaterial( {color:  0x00FF00} );
+	var cube = new THREE.Mesh( geometry, material );
+					//cube.position.x=x+(dimentionx*0.5);
+					//cube.position.z=z+(dimentionz*0.5);
+					cube.position.y=-2;
+					scene.add( cube );
+	
     while(i<1600){
         
         element={x:Math.floor(Math.random() * 200) ,z:Math.floor(Math.random() * 200) ,type:1};
@@ -524,8 +567,9 @@ function addWorld(){
             tree.position.z=element.z+0.5  ;
            // tree.position.y= 0.25;    
             trees.push(tree);
-            scene.add(tree); 
-            tablero[element.x][element.z].character=new Character(charcounter++,0,1,element.x,element.z,tree,200,0,0,0,0);
+            scene.add(tree);                                   //(charcounter++,c,t,x        ,z        ,gltf,40 ,5,1,1,1,photo,cube,heigth);
+			
+            tablero[element.x][element.z].character=new Character(charcounter++,0,1,element.x,element.z,tree,200,0,0,0,0,'images/soldier13.png',cube,1);
 													//{x:element.x,z:element.z,view:tree,moving:false,directionX:0,directionZ:0,path:[]};
             i++;
         }
@@ -670,27 +714,27 @@ function createTree(){
 
 function addCharacter(){
 
-    loadchar(40,0,80,'src/characters/army_soldier_02/scene.gltf',1,1,0,2,'images/soldier1.png');
-    loadchar(41,0,80,'src/characters/army_soldier_03/scene.gltf',1,1,0,2,'images/soldier2.png');
-    loadchar(42,0,80,'src/characters/army_soldier_07/scene.gltf',1,1,0,2,'images/soldier3.png');
-    loadchar(43,0,80,'src/characters/army_soldier_15/scene.gltf',1,1,0,2,'images/soldier4.png');
-    loadchar(44,0,80,'src/characters/army_soldier_22/scene.gltf',1,1,0,2,'images/soldier5.png');
-    loadchar(45,0,80,'src/characters/army_soldier_29/scene.gltf',1,1,0,2,'images/soldier6.png');
-    loadchar(46,0,80,'src/characters/army_soldier_30/scene.gltf',1,1,0,2,'images/soldier7.png');
-    loadchar(47,0,80,'src/characters/army_soldier_33/scene.gltf',1,1,0,2,'images/soldier8.png');
-    loadchar(48,0,80,'src/characters/army_soldier_54/scene.gltf',1,1,0,2,'images/soldier9.png');
-    loadchar(49,0,80,'src/characters/army_soldier_56/scene.gltf',1,1,0,2,'images/soldier10.png');
-    loadchar(50,0,80,'src/characters/army_soldier_73/scene.gltf',1,1,0,2,'images/soldier11.png');
-    loadchar(51,0,80,'src/characters/army_soldier_80/scene.gltf',1,1,0,2,'images/soldier12.png');
-    loadchar(52,0,80,'src/characters/army_soldier_83/scene.gltf',1,1,0,2,'images/soldier13.png');
-    loadchar(53,0,80,'src/characters/army_soldier_85/scene.gltf',1,1,0,2,'images/soldier14.png');
+    loadchar(40,0,80,'src/characters/army_soldier_02/scene.gltf',1,1,0,2,'images/soldier1.png',1);
+    loadchar(41,0,80,'src/characters/army_soldier_03/scene.gltf',1,1,0,2,'images/soldier2.png',1);
+    loadchar(42,0,80,'src/characters/army_soldier_07/scene.gltf',1,1,0,2,'images/soldier3.png',1);
+    loadchar(43,0,80,'src/characters/army_soldier_15/scene.gltf',1,1,0,2,'images/soldier4.png',1);
+    loadchar(44,0,80,'src/characters/army_soldier_22/scene.gltf',1,1,0,2,'images/soldier5.png',1);
+    loadchar(45,0,80,'src/characters/army_soldier_29/scene.gltf',1,1,0,2,'images/soldier6.png',1);
+    loadchar(46,0,80,'src/characters/army_soldier_30/scene.gltf',1,1,0,2,'images/soldier7.png',1);
+    loadchar(47,0,80,'src/characters/army_soldier_33/scene.gltf',1,1,0,2,'images/soldier8.png',1);
+    loadchar(48,0,80,'src/characters/army_soldier_54/scene.gltf',1,1,0,2,'images/soldier9.png',1);
+    loadchar(49,0,80,'src/characters/army_soldier_56/scene.gltf',1,1,0,2,'images/soldier10.png',1);
+    loadchar(50,0,80,'src/characters/army_soldier_73/scene.gltf',1,1,0,2,'images/soldier11.png',1);
+    loadchar(51,0,80,'src/characters/army_soldier_80/scene.gltf',1,1,0,2,'images/soldier12.png',1);
+    loadchar(52,0,80,'src/characters/army_soldier_83/scene.gltf',1,1,0,2,'images/soldier13.png',1);
+    loadchar(53,0,80,'src/characters/army_soldier_85/scene.gltf',1,1,0,2,'images/soldier14.png',1);
     
 	
-	loadchar(40,0,50,'src/builds/town_house_01/scene.gltf',8,5,0,1,'images/soldier13.png');
-    loadchar(50,0,50,'src/builds/town_house_02/scene.gltf',5,3,0,1,'images/soldier13.png');
-	loadchar(60,0,50,'src/builds/town_house_03/scene.gltf',5,4,0,1,'images/soldier13.png');
-	loadchar(70,0,50,'src/builds/town_house_09/scene.gltf',9,6,0,1,'images/soldier13.png');
-	loadchar(80,0,50,'src/builds/town_house_10/scene.gltf',6,4,1,'images/soldier13.png');
+	loadchar(40,0,50,'src/builds/town_house_01/scene.gltf',8,5,0,1,'images/soldier13.png',10);
+    loadchar(50,0,50,'src/builds/town_house_02/scene.gltf',5,3,0,1,'images/soldier13.png',10);
+	loadchar(60,0,50,'src/builds/town_house_03/scene.gltf',5,4,0,1,'images/soldier13.png',10);
+	loadchar(70,0,50,'src/builds/town_house_09/scene.gltf',9,6,0,1,'images/soldier13.png',10);
+	loadchar(80,0,50,'src/builds/town_house_10/scene.gltf',6,4,0,1,'images/soldier13.png',10);
 }
 
 	

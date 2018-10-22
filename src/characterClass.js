@@ -1,9 +1,10 @@
-function Character (id,clan,type,x,z,view,health,speed,attack,strength,range,photo,lifebar) {
+function Character (id,clan,type,x,z,view,health,speed,attack,strength,range,photo,lifebar,heigth) {
 	this.id=id;
 	this.clan=clan;
     this.type = type;
     this.x=x;
 	this.z=z;
+	this.heigth=heigth;
 	this.xi=0;
 	this.zi=0;
 	this.view=view;
